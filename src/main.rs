@@ -2,10 +2,13 @@ use std::cmp::max;
 use std::fs;
 use rand::Rng;
 use crate::misc::*;
+use crate::cover::Cover;
 
 type Sets = Vec<Vec<i32>>;
 
 mod misc;
+mod item;
+mod cover;
 
 fn main() {
     let t = fs::read_to_string("triangle.txt").unwrap();
@@ -32,6 +35,8 @@ fn main() {
     } else {
         println!("No cover");
     }
+
+    println!("Knapsack max cost {}", knapsack(150));
 }
 
 fn triangle_max_sum(mut triangle: Vec<Vec<u32>>) -> u32 {
@@ -47,11 +52,6 @@ fn triangle_max_sum(mut triangle: Vec<Vec<u32>>) -> u32 {
 }
 
 fn greedy_cover(n: i32, sets: &Sets) -> Option<Sets> {
-    struct Cover {
-        pub union: Vec<i32>,
-        pub sets: Vec<Vec<i32>>
-    }
-
     let mut result = Cover {
         union: vec![],
         sets: vec![]
@@ -118,7 +118,7 @@ fn genetic(n: i32, mut approx: Sets, sets: Sets) -> Sets {
                     specie.remove(idx);
                     approx = specie;
                     ended = false;
-                    println!("here 1");
+                    println!("Reduced len");
                     break;
                 } else {
                     continue;
@@ -128,4 +128,42 @@ fn genetic(n: i32, mut approx: Sets, sets: Sets) -> Sets {
     };
 
     approx
+}
+
+fn knapsack(max_capacity: usize) -> u32 {
+    let weights = vec![
+        7,  0,  30, 22, 80, 94, 11, 81, 70, 64, 59, 18, 0,  36, 3,  8,  15,
+        42, 9,  0,  42, 47, 52, 32, 26, 48, 55, 6,  29, 84, 2,  4,  18, 56,
+        7,  29, 93, 44, 71, 3,  86, 66, 31, 65, 0,  79, 20, 65, 52, 13
+    ];
+    let costs = vec![
+        360, 83, 59,  130, 431, 67, 230, 52,  93,  125, 670, 892, 600,
+        38,  48, 147, 78,  256, 63, 17,  120, 164, 432, 35,  92,  110,
+        22,  42, 50,  323, 514, 28, 87,  73,  78,  15,  26,  78,  210,
+        36,  85, 189, 274, 43,  33, 10,  19,  389, 276, 312
+    ];
+
+    //result[0][..] == 0
+    //result[..][0] == 0
+    let mut result = vec![vec![0u32; max_capacity + 1]; weights.len() + 1];
+
+    for i in 0..weights.len() {
+        for j in 1..=max_capacity {
+            if weights[i] > j {
+                result[i + 1][j] = result[i][j];
+            }
+            else
+            {
+                let prev = result[i][j];
+                let remaining_cost = costs[i] + result[i][j - weights[i]];
+                result[i + 1][j] = max(prev, remaining_cost);
+            }
+        }
+    }
+
+    *result
+        .last()
+        .unwrap()
+        .last()
+        .unwrap()
 }
