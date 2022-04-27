@@ -88,11 +88,11 @@ fn greedy_cover(n: i32, sets: &Sets) -> Option<Sets> {
 
 fn genetic(n: i32, mut approx: Sets, sets: Sets) -> Sets {
     let mut rand = rand::thread_rng();
-    let mut ended = false;
+    let mut count = 0;
+    let max_iterations = 5;
+    let mutations_count = 1;
 
-    while !ended {
-        ended = true;
-
+    'outer: while count < max_iterations {
         //fill
         let mut population = {
             let mut res = vec![];
@@ -106,9 +106,11 @@ fn genetic(n: i32, mut approx: Sets, sets: Sets) -> Sets {
         //mutate
         for specie in population.iter_mut() {
             let len = specie.len();
-            let idx1 = rand.gen_range(0..len);
-            let idx2 = rand.gen_range(0..sets.len());
-            specie[idx1] = sets[idx2].clone();
+            for _ in 0..mutations_count {
+                let idx1 = rand.gen_range(0..len);
+                let idx2 = rand.gen_range(0..sets.len());
+                specie[idx1] = sets[idx2].clone();
+            }
         }
 
         //fit
@@ -117,14 +119,13 @@ fn genetic(n: i32, mut approx: Sets, sets: Sets) -> Sets {
                 if let Some(idx) = find_redundant(n, &specie) {
                     specie.remove(idx);
                     approx = specie;
-                    ended = false;
                     println!("Reduced len");
-                    break;
-                } else {
-                    continue;
+                    continue 'outer;
                 }
             }
         }
+
+        count += 1;
     };
 
     approx
